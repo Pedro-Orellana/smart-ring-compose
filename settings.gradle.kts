@@ -1,3 +1,5 @@
+import java.net.URI
+
 pluginManagement {
     repositories {
         google {
@@ -16,6 +18,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        ivy {
+            url = URI.create("https://mbientlab.com/releases/ivyrep")
+            layout("gradle")
+        }
     }
 }
 
