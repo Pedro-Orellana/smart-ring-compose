@@ -23,7 +23,8 @@ import com.pedroapps.smartring20.components.NoRingCardLayout
 
 @Composable
 fun HomeScreen(
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    startScanning: () -> Unit
 ) {
 
     Box(modifier = Modifier
@@ -68,7 +69,9 @@ fun HomeScreen(
 
         }
 
-        NoRingCardLayout()
+        NoRingCardLayout(
+            startScanning = startScanning
+        )
 
     }
 
@@ -83,6 +86,7 @@ fun HomeScreenPreview() {
     val paddingValues = PaddingValues()
 
     HomeScreen(
-        paddingValues = paddingValues
+        paddingValues = paddingValues,
+        startScanning = {}
     )
 }

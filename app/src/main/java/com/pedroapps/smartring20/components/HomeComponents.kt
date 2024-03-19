@@ -33,7 +33,9 @@ import com.pedroapps.smartring20.R
 
 
 @Composable
-fun NoRingCardLayout() {
+fun NoRingCardLayout(
+    startScanning: () -> Unit
+) {
 
     val isScanning = remember {
         mutableStateOf(false)
@@ -47,14 +49,15 @@ fun NoRingCardLayout() {
     ) {
         if (isScanning.value) {
             ScanningLayout(isScanning = isScanning)
-        } else NotScanningLayout(isScanning = isScanning)
+        } else NotScanningLayout(isScanning = isScanning, startScanning = startScanning)
     }
 }
 
 
 @Composable
 private fun NotScanningLayout(
-    isScanning: MutableState<Boolean>
+    isScanning: MutableState<Boolean>,
+    startScanning: () -> Unit
 ) {
     Text(
         text = "Looks like you still don't have any registered ring, please start scanning to find your ring!",
@@ -62,7 +65,12 @@ private fun NotScanningLayout(
         modifier = Modifier
             .padding(start = 12.dp, end = 12.dp, bottom = 20.dp)
     )
-    TextButton(onClick = { isScanning.value = !isScanning.value }) {
+    TextButton(
+        onClick = {
+            isScanning.value = !isScanning.value
+            startScanning()
+        }
+    ) {
         Text(text = "start scanning")
     }
 }
@@ -231,11 +239,4 @@ fun RingCardPreview() {
         RingCard()
     }
 
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun NoRingCardLayoutPreview() {
-    NoRingCardLayout()
 }
