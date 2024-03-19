@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.mbientlab.metawear.MetaWearBoard
 import com.pedroapps.smartring20.components.AppBottomBar
 import com.pedroapps.smartring20.screens.Destinations
 import com.pedroapps.smartring20.screens.DevicesScreen

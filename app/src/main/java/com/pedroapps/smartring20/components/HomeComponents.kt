@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,9 +26,58 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pedroapps.smartring20.R
+
+
+@Composable
+fun NoRingCardLayout() {
+
+    val isScanning = remember {
+        mutableStateOf(false)
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        if (isScanning.value) {
+            ScanningLayout(isScanning = isScanning)
+        } else NotScanningLayout(isScanning = isScanning)
+    }
+}
+
+
+@Composable
+private fun NotScanningLayout(
+    isScanning: MutableState<Boolean>
+) {
+    Text(
+        text = "Looks like you still don't have any registered ring, please start scanning to find your ring!",
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .padding(start = 12.dp, end = 12.dp, bottom = 20.dp)
+    )
+    TextButton(onClick = { isScanning.value = !isScanning.value }) {
+        Text(text = "start scanning")
+    }
+}
+
+@Composable
+private fun ScanningLayout(
+    isScanning: MutableState<Boolean>
+) {
+    CircularProgressIndicator()
+    Text(text = "Scanning...")
+    Text(text = "Make sure your ring is turned on and in range")
+    TextButton(onClick = { isScanning.value = !isScanning.value }) {
+        Text(text = "stop scanning")
+    }
+}
 
 
 @Composable
@@ -181,4 +231,11 @@ fun RingCardPreview() {
         RingCard()
     }
 
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun NoRingCardLayoutPreview() {
+    NoRingCardLayout()
 }
