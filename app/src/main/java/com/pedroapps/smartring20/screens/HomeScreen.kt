@@ -1,5 +1,6 @@
 package com.pedroapps.smartring20.screens
 
+import android.bluetooth.BluetoothDevice
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -20,16 +25,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pedroapps.smartring20.components.NoRingCardLayout
+import com.pedroapps.smartring20.components.RingCard
+import com.pedroapps.smartring20.components.SmartRingFoundDialog
+import com.pedroapps.smartring20.viewmodels.SmartRingUI
 
 @Composable
 fun HomeScreen(
     paddingValues: PaddingValues,
-    startScanning: () -> Unit
+    isScanning: Boolean,
+    startScanning: () -> Unit,
+    stopScanning: () -> Unit,
+    foundSmartRing: BluetoothDevice?,
+    dismissFoundSmartRing: () -> Unit,
+    registeredRing: SmartRingUI,
 ) {
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) {
 
         Column(
             horizontalAlignment = Alignment.Start,
@@ -65,13 +80,27 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 12.dp, end = 12.dp)
-                )
+            )
 
         }
+        if (registeredRing.address.isEmpty() && registeredRing.ringName.isEmpty()) {
+            NoRingCardLayout(
+                isScanning = isScanning,
+                startScanning = startScanning,
+                stopScanning = stopScanning
+            )
+        } else {
+            RingCard(registeredRing = registeredRing)
+        }
 
-        NoRingCardLayout(
-            startScanning = startScanning
-        )
+
+        if (foundSmartRing != null) {
+            SmartRingFoundDialog(
+                foundRing = foundSmartRing,
+                dismissFoundRing = dismissFoundSmartRing
+            )
+        }
+
 
     }
 
@@ -87,6 +116,11 @@ fun HomeScreenPreview() {
 
     HomeScreen(
         paddingValues = paddingValues,
-        startScanning = {}
+        isScanning = false,
+        startScanning = {},
+        stopScanning = {},
+        foundSmartRing = null,
+        dismissFoundSmartRing = {},
+        registeredRing = SmartRingUI.emptySmartRingUI()
     )
 }

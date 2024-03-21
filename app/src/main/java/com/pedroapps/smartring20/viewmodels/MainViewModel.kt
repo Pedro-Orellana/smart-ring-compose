@@ -2,6 +2,7 @@ package com.pedroapps.smartring20.viewmodels
 
 import android.Manifest
 import android.app.Application
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
@@ -12,21 +13,54 @@ import androidx.lifecycle.AndroidViewModel
 import com.pedroapps.smartring20.ble.RingScanCallback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class MainViewModel(
     private val application: Application
-): AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
     private val _appState = MutableStateFlow(RingAppState())
     val appState = _appState.asStateFlow()
 
-    private val bluetoothManager = application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothManager =
+        application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val bluetoothAdapter = bluetoothManager.adapter
+    private val ringScanCallback = RingScanCallback(
+        updateUI = this::updateFoundSmartRing,
+        stopScanning = this::stopRingScanning
+    )
 
-    fun startScanning() {
-        if(bluetoothAdapter.isEnabled) {
 
-            println("This should start scanning...")
+    //STATE FUNCTIONS
+
+
+    private fun updateIsScanning(isScanning: Boolean) {
+        _appState.update { currentState ->
+            currentState.copy(isScanning = isScanning)
+        }
+    }
+
+    private fun updateRingUIState(smartRing : SmartRingUI) {
+        _appState.update { currentState ->
+            currentState.copy(registeredRing = smartRing)
+        }
+    }
+
+    fun updateFoundSmartRing(bluetoothDevice: BluetoothDevice?) {
+        _appState.update { currentState ->
+            currentState.copy(foundSmartRing = bluetoothDevice)
+        }
+    }
+
+
+    //BLUETOOTH FUNCTIONS
+
+    fun startRingScanning() {
+        if (bluetoothAdapter.isEnabled) {
+
+            updateIsScanning(true)
+
+            println("scanning now...")
 
             val bleScanner = bluetoothAdapter.bluetoothLeScanner
 
@@ -38,27 +72,33 @@ class MainViewModel(
 
             val settings = ScanSettings.Builder().build()
 
-            val scanCallback = RingScanCallback()
-
             if (ActivityCompat.checkSelfPermission(
                     application,
                     Manifest.permission.BLUETOOTH_SCAN
                 ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                println("The function is getting returned without scanning")
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return
-            }
-            bleScanner.startScan(scanFilters, settings, scanCallback)
+            ) { return }
+            bleScanner.startScan(scanFilters, settings, ringScanCallback)
 
 
         }
     }
+
+
+    fun stopRingScanning() {
+        println("Stopped scanning!")
+        updateIsScanning(false)
+        if (ActivityCompat.checkSelfPermission(
+                application,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED
+        ) { return }
+        bluetoothAdapter.bluetoothLeScanner.stopScan(ringScanCallback)
+    }
+
+
+
+
+
+
 
 }

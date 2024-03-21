@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,32 +37,45 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val bluetoothPermissionsLauncher =
-              rememberLauncherForActivityResult(
-                  contract = ActivityResultContracts.RequestPermission()) { isGranted ->
-                  val message = if(isGranted) "able to perform bluetooth scans!"
-                  else "Please grant this permission for this app to work properly"
 
-                  Toast.makeText(this,message, Toast.LENGTH_SHORT).show()
-              }
-
-
-            val coarseLocationPermissionLauncher =
+            val fineLocationPermissionLauncher =
                 rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()) { isGranted ->
-                    val message = if(isGranted) "Location permission granted!"
-                        else "please grant location permission"
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    val message = if (isGranted) "All necessary permissions granted"
+                    else "please grant all permissions for app to work properly"
+
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                }
+
+
+            val bluetoothPermissionsLauncher =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissions ->
+                    val scanPermission = permissions[Manifest.permission.BLUETOOTH_SCAN]
+                    val connectPermission = permissions[Manifest.permission.BLUETOOTH_CONNECT]
+
+                    if (scanPermission == true && connectPermission == true) {
+                        //it doesn't say in the official documentation, but to be able to
+                        //scan bluetooth devices, fine location is required
+                        fineLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
                 }
 
 
 
-            LaunchedEffect(key1 = bluetoothPermissionsLauncher, key2 = coarseLocationPermissionLauncher) {
-                bluetoothPermissionsLauncher.launch(Manifest.permission.BLUETOOTH_SCAN)
-                //it doesn't say in the official documentation, but to be able to
-                //scan bluetooth devices, fine location is required
-                coarseLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            LaunchedEffect(
+                key1 = bluetoothPermissionsLauncher,
+            ) {
+                bluetoothPermissionsLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    )
+                )
             }
-           AppContent()
+            AppContent()
         }
     }
 }
@@ -87,11 +101,13 @@ fun ContainerContent(
 ) {
 
     val navController = rememberNavController()
+    val appState = viewModel.appState.collectAsState()
+
     Scaffold(
         bottomBar = { AppBottomBar(navController = navController) },
         content = { paddingValues ->
 
-            NavHost(navController = navController , startDestination = Destinations.HomeScreen ) {
+            NavHost(navController = navController, startDestination = Destinations.HomeScreen) {
 
                 composable(route = Destinations.DevicesScreen) {
                     DevicesScreen(paddingValues = paddingValues)
@@ -103,8 +119,13 @@ fun ContainerContent(
                 composable(route = Destinations.HomeScreen) {
                     HomeScreen(
                         paddingValues = paddingValues,
-                        startScanning = viewModel::startScanning
-                        )
+                        isScanning = appState.value.isScanning,
+                        startScanning = viewModel::startRingScanning,
+                        stopScanning = viewModel::stopRingScanning,
+                        foundSmartRing = appState.value.foundSmartRing,
+                        dismissFoundSmartRing = { viewModel.updateFoundSmartRing(null) },
+                        registeredRing = appState.value.registeredRing
+                    )
                 }
                 composable(route = Destinations.NewDeviceScreen) {
                     NewDeviceScreen(paddingValues = paddingValues)
@@ -121,9 +142,8 @@ fun ContainerContent(
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun ContainerContentPreview() {
-  AppContent()
+    AppContent()
 }
