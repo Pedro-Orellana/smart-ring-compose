@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -29,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -45,10 +48,6 @@ fun NoRingCardLayout(
     startScanning: () -> Unit,
     stopScanning: () -> Unit
 ) {
-
-//    val isScanning = remember {
-//        mutableStateOf(false)
-//    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -94,8 +93,9 @@ private fun ScanningLayout(
 
 
 @Composable
-fun RingCard(
-    registeredRing: SmartRingUI
+fun RingLayout(
+    registeredRing: SmartRingUI,
+    deleteRing: (SmartRingUI) -> Unit
 ) {
     val isRotated = remember {
         mutableStateOf(false)
@@ -107,28 +107,40 @@ fun RingCard(
         label = "card rotation state"
     )
 
-    Card(modifier = Modifier
-        .height(300.dp)
-        .fillMaxWidth()
-        .padding(start = 12.dp, end = 12.dp)
-        .graphicsLayer {
-            rotationY = rotation
-            cameraDistance = 8 * density
-        }) {
-        if (isRotated.value) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
 
-            RingCardBack(
-                rotation = rotation,
-                isRotated = isRotated,
-                registeredRing = registeredRing
-            )
-        } else {
-            RingCardFront(
-                isRotated = isRotated,
-                registeredRing = registeredRing
-            )
+        Spacer(modifier = Modifier.padding(20.dp))
+        Card(modifier = Modifier
+            .height(300.dp)
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp)
+            .graphicsLayer {
+                rotationY = rotation
+                cameraDistance = 8 * density
+            }) {
+            if (isRotated.value) {
+
+                RingCardBack(
+                    rotation = rotation,
+                    isRotated = isRotated,
+                    registeredRing = registeredRing,
+                    deleteRing = deleteRing
+                )
+            } else {
+                RingCardFront(
+                    isRotated = isRotated,
+                    registeredRing = registeredRing
+                )
+            }
         }
     }
+
+
 }
 
 
@@ -203,8 +215,14 @@ private fun RingCardFront(
 @Composable
 private fun RingCardBack(
     rotation: Float, isRotated: MutableState<Boolean>,
-    registeredRing: SmartRingUI
+    registeredRing: SmartRingUI,
+    deleteRing: (SmartRingUI) -> Unit
 ) {
+
+    val showDeleteRingDialog = remember {
+        mutableStateOf(false)
+    }
+
     Box(modifier = Modifier
         .fillMaxSize()
         .graphicsLayer {
@@ -218,9 +236,20 @@ private fun RingCardBack(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            Text(text = "Back of card")
-        }
+            TextButton(onClick = { /*TODO*/ }) {
+                Text(text = "Connect")
+            }
+            Spacer(modifier = Modifier.padding(12.dp))
 
+            TextButton(onClick = {
+                showDeleteRingDialog.value = true
+            }) {
+                Text(
+                    text = "Delete ring",
+                    color = Color.Red
+                )
+            }
+        }
 
         Row(
             horizontalArrangement = Arrangement.Start,
@@ -233,6 +262,15 @@ private fun RingCardBack(
                 Text(text = "Back to details")
             }
         }
+        if (showDeleteRingDialog.value) {
+
+            DeleteRingDialog(
+                smartRingUI = registeredRing,
+                dismissDeleteRingDialog = { showDeleteRingDialog.value = false },
+                deleteRing = deleteRing
+            )
+        }
+
 
     }
 
@@ -243,7 +281,8 @@ private fun RingCardBack(
 @Composable
 fun SmartRingFoundDialog(
     foundRing: BluetoothDevice?,
-    dismissFoundRing: () -> Unit
+    dismissFoundRing: () -> Unit,
+    saveAndConnectRing: (BluetoothDevice) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = dismissFoundRing,
@@ -261,7 +300,10 @@ fun SmartRingFoundDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { /*TODO*/ }) {
+            TextButton(onClick = {
+                foundRing?.let(saveAndConnectRing)
+                dismissFoundRing()
+            }) {
                 Text(text = "Register Ring")
             }
         },
@@ -277,24 +319,56 @@ fun SmartRingFoundDialog(
 }
 
 
+@Composable
+fun DeleteRingDialog(
+    smartRingUI: SmartRingUI,
+    dismissDeleteRingDialog: () -> Unit,
+    deleteRing: (SmartRingUI) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = dismissDeleteRingDialog,
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.Delete,
+                contentDescription = "delete icon",
+                tint = Color.Red
+            )
+        },
+        title = {
+            Text(text = "Are you sure you want to delete this ring?")
+        },
+        text = {
+            Text(text = "If you delete this ring, all the configurations will be lost")
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                deleteRing(smartRingUI)
+                dismissDeleteRingDialog()
+            }) {
+                Text(text = "Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = dismissDeleteRingDialog) {
+                Text(text = "Cancel")
+            }
+        }
+    )
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun RingCardPreview() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val ring = SmartRingUI(
-            address = "AB:CD:EF:GH:IJ",
-            ringName = "MetaWear"
-        )
+    val ring = SmartRingUI(
+        address = "AB:CD:EF:GH:IJ",
+        ringName = "MetaWear"
+    )
 
-        RingCard(
-            registeredRing = ring
-        )
-    }
-
+    RingLayout(
+        registeredRing = ring,
+        deleteRing = {}
+    )
 }
 
 
@@ -304,6 +378,18 @@ fun SmartRingFoundDialogPreview() {
 
     SmartRingFoundDialog(
         foundRing = null,
-        dismissFoundRing = {}
+        dismissFoundRing = {},
+        saveAndConnectRing = {}
+    )
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun DeleteRingDialogPreview() {
+    DeleteRingDialog(
+        smartRingUI = SmartRingUI.emptySmartRingUI(),
+        dismissDeleteRingDialog = {},
+        deleteRing = {}
     )
 }

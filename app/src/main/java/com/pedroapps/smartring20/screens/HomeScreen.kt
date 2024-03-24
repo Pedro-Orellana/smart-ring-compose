@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -25,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pedroapps.smartring20.components.NoRingCardLayout
-import com.pedroapps.smartring20.components.RingCard
+import com.pedroapps.smartring20.components.RingLayout
 import com.pedroapps.smartring20.components.SmartRingFoundDialog
 import com.pedroapps.smartring20.viewmodels.SmartRingUI
 
@@ -37,7 +35,9 @@ fun HomeScreen(
     stopScanning: () -> Unit,
     foundSmartRing: BluetoothDevice?,
     dismissFoundSmartRing: () -> Unit,
+    saveAndConnectRing: (BluetoothDevice) -> Unit,
     registeredRing: SmartRingUI,
+    deleteRing: (SmartRingUI) -> Unit
 ) {
 
     Box(
@@ -90,14 +90,18 @@ fun HomeScreen(
                 stopScanning = stopScanning
             )
         } else {
-            RingCard(registeredRing = registeredRing)
+            RingLayout(
+                registeredRing = registeredRing,
+                deleteRing = deleteRing
+            )
         }
 
 
         if (foundSmartRing != null) {
             SmartRingFoundDialog(
                 foundRing = foundSmartRing,
-                dismissFoundRing = dismissFoundSmartRing
+                dismissFoundRing = dismissFoundSmartRing,
+                saveAndConnectRing = saveAndConnectRing
             )
         }
 
@@ -121,6 +125,8 @@ fun HomeScreenPreview() {
         stopScanning = {},
         foundSmartRing = null,
         dismissFoundSmartRing = {},
-        registeredRing = SmartRingUI.emptySmartRingUI()
+        saveAndConnectRing = {},
+        registeredRing = SmartRingUI.emptySmartRingUI(),
+        deleteRing = {}
     )
 }

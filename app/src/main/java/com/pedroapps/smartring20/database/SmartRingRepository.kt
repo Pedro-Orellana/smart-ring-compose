@@ -1,6 +1,8 @@
 package com.pedroapps.smartring20.database
 
+import android.annotation.SuppressLint
 import android.app.Application
+import android.bluetooth.BluetoothDevice
 import com.pedroapps.smartring20.viewmodels.SmartRingUI
 import kotlinx.coroutines.flow.Flow
 
@@ -10,8 +12,9 @@ class SmartRingRepository(application: Application) {
     private val smartRingDao = database.smartRingDAO()
 
 
-    suspend fun insertNewRing(ringName: String, ringAddress: String) {
-        val newRing = SmartRingEntity(address = ringAddress, ringName = ringName)
+    @SuppressLint("MissingPermission")
+    suspend fun insertNewRing(device: BluetoothDevice) {
+        val newRing = SmartRingEntity(address = device.address, ringName = device.name)
         smartRingDao.createNewRing(newRing)
     }
 
@@ -20,8 +23,13 @@ class SmartRingRepository(application: Application) {
         smartRingDao.updateRing(entity)
     }
 
-    fun getRegisteredRing() : Flow<SmartRingEntity> {
+    fun getRegisteredRing() : Flow<SmartRingEntity?> {
         return smartRingDao.getRegisteredRing()
+    }
+
+    suspend fun deleteRegisteredRing(smartRingUI: SmartRingUI) {
+        val entity = smartRingUI.toSmartRingEntity()
+        smartRingDao.deleteRegisteredRing(entity)
     }
 
 

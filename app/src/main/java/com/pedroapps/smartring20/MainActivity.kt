@@ -124,7 +124,13 @@ fun ContainerContent(
                         stopScanning = viewModel::stopRingScanning,
                         foundSmartRing = appState.value.foundSmartRing,
                         dismissFoundSmartRing = { viewModel.updateFoundSmartRing(null) },
-                        registeredRing = appState.value.registeredRing
+
+                        saveAndConnectRing = { device ->
+                            viewModel.saveNewRing(device)
+                            viewModel.connectToRing(device)
+                        },
+                        registeredRing = appState.value.registeredRing,
+                        deleteRing = viewModel::deleteRing
                     )
                 }
                 composable(route = Destinations.NewDeviceScreen) {
