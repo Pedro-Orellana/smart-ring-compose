@@ -10,11 +10,15 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.pedroapps.smartring20.ble.RingScanCallback
 import com.pedroapps.smartring20.database.SmartRingRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val application: Application
@@ -23,15 +27,27 @@ class MainViewModel(
     private val _appState = MutableStateFlow(RingAppState())
     val appState = _appState.asStateFlow()
 
-    val ringRepository = SmartRingRepository(application)
+    private val ringRepository = SmartRingRepository(application)
 
     private val bluetoothManager =
         application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val bluetoothAdapter = bluetoothManager.adapter
+
     private val ringScanCallback = RingScanCallback(
         updateUI = this::updateFoundSmartRing,
         stopScanning = this::stopRingScanning
     )
+
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            ringRepository.getRegisteredRing().distinctUntilChanged()
+                .collect { smartRing ->
+                    val updatedRing = smartRing?.toSmartRingUI() ?: SmartRingUI.emptySmartRingUI()
+                    updateRingUIState(updatedRing)
+                }
+        }
+    }
 
 
     //STATE FUNCTIONS
@@ -43,7 +59,7 @@ class MainViewModel(
         }
     }
 
-    private fun updateRingUIState(smartRing : SmartRingUI) {
+    private fun updateRingUIState(smartRing: SmartRingUI) {
         _appState.update { currentState ->
             currentState.copy(registeredRing = smartRing)
         }
@@ -56,14 +72,30 @@ class MainViewModel(
     }
 
 
+    //DATABASE FUNCTIONS
+
+    fun saveNewRing(device: BluetoothDevice) {
+        viewModelScope.launch {
+            ringRepository.insertNewRing(device)
+        }
+    }
+
+    fun deleteRing(smartRing: SmartRingUI) {
+        viewModelScope.launch {
+            ringRepository.deleteRegisteredRing(smartRing)
+        }
+    }
+
+
     //BLUETOOTH FUNCTIONS
+
+
+    //SCANNING
 
     fun startRingScanning() {
         if (bluetoothAdapter.isEnabled) {
 
             updateIsScanning(true)
-
-            println("scanning now...")
 
             val bleScanner = bluetoothAdapter.bluetoothLeScanner
 
@@ -79,7 +111,9 @@ class MainViewModel(
                     application,
                     Manifest.permission.BLUETOOTH_SCAN
                 ) != PackageManager.PERMISSION_GRANTED
-            ) { return }
+            ) {
+                return
+            }
             bleScanner.startScan(scanFilters, settings, ringScanCallback)
 
 
@@ -88,20 +122,24 @@ class MainViewModel(
 
 
     fun stopRingScanning() {
-        println("Stopped scanning!")
         updateIsScanning(false)
         if (ActivityCompat.checkSelfPermission(
                 application,
                 Manifest.permission.BLUETOOTH_SCAN
             ) != PackageManager.PERMISSION_GRANTED
-        ) { return }
+        ) {
+            return
+        }
         bluetoothAdapter.bluetoothLeScanner.stopScan(ringScanCallback)
     }
 
 
+    //CONNECTING
 
-
-
+    fun connectToRing(device: BluetoothDevice) {
+        //TODO(finish this method)
+        println("Connected to ring!")
+    }
 
 
 }
