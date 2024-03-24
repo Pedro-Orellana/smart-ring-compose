@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import com.pedroapps.smartring20.ble.RingScanCallback
+import com.pedroapps.smartring20.database.SmartRingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,6 +22,8 @@ class MainViewModel(
 
     private val _appState = MutableStateFlow(RingAppState())
     val appState = _appState.asStateFlow()
+
+    val ringRepository = SmartRingRepository(application)
 
     private val bluetoothManager =
         application.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager

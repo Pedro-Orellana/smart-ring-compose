@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.pedroapps.smartring20.viewmodels.SmartRingUI
 
-@Entity(tableName = "smart_ring")
+@Entity(tableName = "smart_ring_table")
 data class SmartRingEntity(
     @PrimaryKey
     @ColumnInfo(name = "address_column")
@@ -16,7 +16,6 @@ data class SmartRingEntity(
 ) {
 
     fun toSmartRingUI(): SmartRingUI {
-
         return SmartRingUI(
             address = address,
             ringName = ringName
