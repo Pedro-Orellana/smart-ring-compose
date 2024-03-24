@@ -1,8 +1,11 @@
 package com.pedroapps.smartring20
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -32,11 +35,13 @@ import com.pedroapps.smartring20.screens.SettingsScreen
 import com.pedroapps.smartring20.ui.theme.SmartRing20Theme
 import com.pedroapps.smartring20.viewmodels.MainViewModel
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), ServiceConnection {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
+            val mainViewModel: MainViewModel = viewModel()
 
             val fineLocationPermissionLauncher =
                 rememberLauncherForActivityResult(
@@ -75,21 +80,35 @@ class MainActivity : ComponentActivity() {
                     )
                 )
             }
-            AppContent()
+            AppContent(
+                viewModel = mainViewModel
+            )
         }
+    }
+
+    override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onServiceDisconnected(p0: ComponentName?) {
+        TODO("Not yet implemented")
     }
 }
 
 
 @Composable
-fun AppContent() {
+fun AppContent(
+    viewModel: MainViewModel = viewModel()
+) {
     SmartRing20Theme {
         // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            ContainerContent()
+            ContainerContent(
+                viewModel = viewModel
+            )
         }
     }
 }
