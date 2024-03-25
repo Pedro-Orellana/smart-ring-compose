@@ -37,7 +37,8 @@ fun HomeScreen(
     dismissFoundSmartRing: () -> Unit,
     saveAndConnectRing: (BluetoothDevice) -> Unit,
     registeredRing: SmartRingUI,
-    deleteRing: (SmartRingUI) -> Unit
+    deleteRing: (SmartRingUI) -> Unit,
+    bindToSmartRingService: (String) -> Unit
 ) {
 
     Box(
@@ -92,7 +93,8 @@ fun HomeScreen(
         } else {
             RingLayout(
                 registeredRing = registeredRing,
-                deleteRing = deleteRing
+                deleteRing = deleteRing,
+                bindToSmartRingService = bindToSmartRingService
             )
         }
 
@@ -127,6 +129,7 @@ fun HomeScreenPreview() {
         dismissFoundSmartRing = {},
         saveAndConnectRing = {},
         registeredRing = SmartRingUI.emptySmartRingUI(),
-        deleteRing = {}
+        deleteRing = {},
+        bindToSmartRingService = {}
     )
 }

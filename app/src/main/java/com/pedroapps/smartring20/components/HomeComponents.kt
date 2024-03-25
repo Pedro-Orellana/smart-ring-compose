@@ -1,7 +1,12 @@
 package com.pedroapps.smartring20.components
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -34,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,7 +101,8 @@ private fun ScanningLayout(
 @Composable
 fun RingLayout(
     registeredRing: SmartRingUI,
-    deleteRing: (SmartRingUI) -> Unit
+    deleteRing: (SmartRingUI) -> Unit,
+    bindToSmartRingService: (String) -> Unit
 ) {
     val isRotated = remember {
         mutableStateOf(false)
@@ -129,7 +136,8 @@ fun RingLayout(
                     rotation = rotation,
                     isRotated = isRotated,
                     registeredRing = registeredRing,
-                    deleteRing = deleteRing
+                    deleteRing = deleteRing,
+                    bindToSmartRingService = bindToSmartRingService
                 )
             } else {
                 RingCardFront(
@@ -216,12 +224,25 @@ private fun RingCardFront(
 private fun RingCardBack(
     rotation: Float, isRotated: MutableState<Boolean>,
     registeredRing: SmartRingUI,
-    deleteRing: (SmartRingUI) -> Unit
+    deleteRing: (SmartRingUI) -> Unit,
+    bindToSmartRingService: (String) -> Unit
 ) {
+
+    val context = LocalContext.current
 
     val showDeleteRingDialog = remember {
         mutableStateOf(false)
     }
+
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                bindToSmartRingService(registeredRing.address)
+            } else {
+                val message = "Please grant notification permission to connect to smart ring"
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -236,7 +257,12 @@ private fun RingCardBack(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            TextButton(onClick = { /*TODO*/ }) {
+            TextButton(onClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                else
+                    bindToSmartRingService(registeredRing.address)
+            }) {
                 Text(text = "Connect")
             }
             Spacer(modifier = Modifier.padding(12.dp))
@@ -367,7 +393,8 @@ fun RingCardPreview() {
 
     RingLayout(
         registeredRing = ring,
-        deleteRing = {}
+        deleteRing = {},
+        bindToSmartRingService = {}
     )
 }
 
