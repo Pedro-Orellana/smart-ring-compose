@@ -2,16 +2,19 @@ package com.pedroapps.smartring20.viewmodels
 
 import android.Manifest
 import android.app.Application
+import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pedroapps.smartring20.ble.RingScanCallback
+import com.pedroapps.smartring20.ble.SmartRingService
 import com.pedroapps.smartring20.database.SmartRingRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +25,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val application: Application
-) : AndroidViewModel(application) {
+) : AndroidViewModel(application)  {
 
     private val _appState = MutableStateFlow(RingAppState())
     val appState = _appState.asStateFlow()
@@ -68,6 +71,12 @@ class MainViewModel(
     fun updateFoundSmartRing(bluetoothDevice: BluetoothDevice?) {
         _appState.update { currentState ->
             currentState.copy(foundSmartRing = bluetoothDevice)
+        }
+    }
+
+    fun updateSmartRingService(service: SmartRingService?) {
+        _appState.update { currentState ->
+            currentState.copy(smartRingService = service)
         }
     }
 

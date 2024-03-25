@@ -1,8 +1,12 @@
 package com.pedroapps.smartring20
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -25,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.pedroapps.smartring20.ble.SmartRingService
 import com.pedroapps.smartring20.components.AppBottomBar
 import com.pedroapps.smartring20.screens.Destinations
 import com.pedroapps.smartring20.screens.DevicesScreen
@@ -36,12 +41,16 @@ import com.pedroapps.smartring20.ui.theme.SmartRing20Theme
 import com.pedroapps.smartring20.viewmodels.MainViewModel
 
 class MainActivity : ComponentActivity(), ServiceConnection {
+
+    private lateinit var mainViewModel: MainViewModel
+    private var smartRingIntent: Intent? = null
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        checkIfSmartRingServiceIsRunning()
         setContent {
 
-            val mainViewModel: MainViewModel = viewModel()
+            mainViewModel = viewModel()
 
             val fineLocationPermissionLauncher =
                 rememberLauncherForActivityResult(
@@ -51,6 +60,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
                     else "please grant all permissions for app to work properly"
 
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+
                 }
 
 
@@ -81,24 +91,55 @@ class MainActivity : ComponentActivity(), ServiceConnection {
                 )
             }
             AppContent(
-                viewModel = mainViewModel
+                viewModel = mainViewModel,
+                bindToSmartRingService = this::bindToSmartRingService
             )
         }
     }
 
-    override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-        TODO("Not yet implemented")
+    override fun onServiceConnected(p0: ComponentName?, binder: IBinder?) {
+        println("SmartRingService is bound")
+        binder?.let{
+            val smartRingService = (it as SmartRingService.SmartRingBinder).getService()
+            mainViewModel.updateSmartRingService(smartRingService)
+            startForegroundService(smartRingIntent)
+        }
     }
 
     override fun onServiceDisconnected(p0: ComponentName?) {
-        TODO("Not yet implemented")
+        println("SmartRingService is unbound")
+        mainViewModel.updateSmartRingService(null)
     }
+
+    private fun bindToSmartRingService(ringAddress: String) {
+        createSmartRingServiceIntent(ringAddress)
+        smartRingIntent?.let {
+            bindService(it, this, BIND_AUTO_CREATE)
+        }
+
+    }
+
+    private fun createSmartRingServiceIntent(ringAddress: String) {
+        val intent = Intent(this,SmartRingService::class.java)
+        intent.putExtra(BLUETOOTH_DEVICE_ADDRESS, ringAddress)
+        smartRingIntent = intent
+    }
+
+    private fun checkIfSmartRingServiceIsRunning() {
+        val activityManager = getSystemService(ActivityManager::class.java) as ActivityManager
+        val services = activityManager.getRunningServices(Integer.MAX_VALUE)
+        for(service in services) {
+            println("service running: ${service.service.className}")
+        }
+    }
+
 }
 
 
 @Composable
 fun AppContent(
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = viewModel(),
+    bindToSmartRingService: (String) -> Unit
 ) {
     SmartRing20Theme {
         // A surface container using the 'background' color from the theme
@@ -107,7 +148,8 @@ fun AppContent(
             color = MaterialTheme.colorScheme.background
         ) {
             ContainerContent(
-                viewModel = viewModel
+                viewModel = viewModel,
+                bindToSmartRingService = bindToSmartRingService
             )
         }
     }
@@ -116,7 +158,8 @@ fun AppContent(
 
 @Composable
 fun ContainerContent(
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel = viewModel(),
+    bindToSmartRingService: (String) -> Unit
 ) {
 
     val navController = rememberNavController()
@@ -149,7 +192,8 @@ fun ContainerContent(
                             viewModel.connectToRing(device)
                         },
                         registeredRing = appState.value.registeredRing,
-                        deleteRing = viewModel::deleteRing
+                        deleteRing = viewModel::deleteRing,
+                        bindToSmartRingService = bindToSmartRingService
                     )
                 }
                 composable(route = Destinations.NewDeviceScreen) {
@@ -170,5 +214,7 @@ fun ContainerContent(
 @Preview(showBackground = true)
 @Composable
 fun ContainerContentPreview() {
-    AppContent()
+    AppContent(
+        bindToSmartRingService = {}
+    )
 }

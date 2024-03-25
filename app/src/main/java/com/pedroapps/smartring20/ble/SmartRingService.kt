@@ -10,7 +10,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.IBinder
 import com.mbientlab.metawear.MetaWearBoard
@@ -19,14 +18,22 @@ import com.pedroapps.smartring20.BLUETOOTH_DEVICE_ADDRESS
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_ID
 
-class SmartRingService: Service(), ServiceConnection {
+class SmartRingService : Service(), ServiceConnection {
 
     private var bluetoothDevice: BluetoothDevice? = null
     private var btleService: BtleService.LocalBinder? = null
     private var smartRing: MetaWearBoard? = null
 
-    private val bluetoothManager = getSystemService(BluetoothManager::class.java) as BluetoothManager
-    private val notificationManager = getSystemService(NotificationManager::class.java) as NotificationManager
+    private lateinit var bluetoothManager: BluetoothManager
+    private lateinit var notificationManager: NotificationManager
+
+
+    override fun onCreate() {
+        super.onCreate()
+        bluetoothManager = getSystemService(BluetoothManager::class.java) as BluetoothManager
+        notificationManager =
+            getSystemService(NotificationManager::class.java) as NotificationManager
+    }
 
 
     //CONNECTING TO BTLESERVICE
@@ -39,27 +46,19 @@ class SmartRingService: Service(), ServiceConnection {
     }
 
     override fun onServiceDisconnected(p0: ComponentName?) {
+        println("btleService is disconnected")
         btleService = null
     }
 
 
-
-
-
     override fun onBind(intent: Intent?): IBinder? {
-        println("SmartRingService is bound")
 
         val deviceAddress = intent?.getStringExtra(BLUETOOTH_DEVICE_ADDRESS) ?: ""
 
-        if(deviceAddress.isNotEmpty()) {
+        if (deviceAddress.isNotEmpty()) {
             bluetoothDevice = bluetoothManager.adapter.getRemoteDevice(deviceAddress)
             bindBtleService()
-            startForeground(
-                FOREGROUND_SERVICE_NOTIFICATION_ID,
-                createNotification(context = applicationContext),
-            )
-
-           return SmartRingBinder()
+            return SmartRingBinder()
         }
 
         return null
@@ -73,12 +72,16 @@ class SmartRingService: Service(), ServiceConnection {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         println("SmartRingService is foreground started")
+        startForeground(
+            FOREGROUND_SERVICE_NOTIFICATION_ID,
+            createNotification(context = applicationContext),
+        )
         return super.onStartCommand(intent, flags, startId)
     }
 
 
     //CUSTOM METHODS
-    private fun createNotification(context: Context) : Notification {
+    private fun createNotification(context: Context): Notification {
 
         createNotificationChannel()
         return Notification.Builder(context, FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID)
@@ -99,12 +102,12 @@ class SmartRingService: Service(), ServiceConnection {
 
     private fun bindBtleService() {
         val btleIntent = Intent(this, BtleService::class.java)
-        bindService(btleIntent,this, Context.BIND_AUTO_CREATE)
+        bindService(btleIntent, this, Context.BIND_AUTO_CREATE)
     }
 
 
-    private inner class SmartRingBinder: Binder() {
-        fun getService() : SmartRingService =  this@SmartRingService
+    inner class SmartRingBinder : Binder() {
+        fun getService(): SmartRingService = this@SmartRingService
     }
 
 
