@@ -54,6 +54,7 @@ class SmartRingService : Service(), ServiceConnection {
     override fun onBind(intent: Intent?): IBinder? {
 
         val deviceAddress = intent?.getStringExtra(BLUETOOTH_DEVICE_ADDRESS) ?: ""
+        println("device address: $deviceAddress")
 
         if (deviceAddress.isNotEmpty()) {
             bluetoothDevice = bluetoothManager.adapter.getRemoteDevice(deviceAddress)
@@ -103,6 +104,17 @@ class SmartRingService : Service(), ServiceConnection {
     private fun bindBtleService() {
         val btleIntent = Intent(this, BtleService::class.java)
         bindService(btleIntent, this, Context.BIND_AUTO_CREATE)
+    }
+
+
+    //METAWEAR BOARD METHODS
+
+    fun getRingInformation() {
+        smartRing?.let {
+            println("board address: ${it.macAddress}")
+            println("board connected: ${it.isConnected}")
+            //println("board model: ${it.model.name}")
+        }
     }
 
 
