@@ -3,10 +3,8 @@ package com.pedroapps.smartring20
 import android.Manifest
 import android.app.ActivityManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -47,10 +45,18 @@ class MainActivity : ComponentActivity(), ServiceConnection {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkIfSmartRingServiceIsRunning()
-        setContent {
 
+
+
+
+        setContent {
             mainViewModel = viewModel()
+
+            LaunchedEffect(key1 = mainViewModel) {
+                if(this@MainActivity::mainViewModel.isInitialized) {
+                    rebindServiceIfNeeded()
+                }
+            }
 
             val fineLocationPermissionLauncher =
                 rememberLauncherForActivityResult(
@@ -101,6 +107,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
         println("SmartRingService is bound")
         binder?.let{
             val smartRingService = (it as SmartRingService.SmartRingBinder).getService()
+            smartRingService.getRingInformation()
             mainViewModel.updateSmartRingService(smartRingService)
             startForegroundService(smartRingIntent)
         }
@@ -112,24 +119,32 @@ class MainActivity : ComponentActivity(), ServiceConnection {
     }
 
     private fun bindToSmartRingService(ringAddress: String) {
-        createSmartRingServiceIntent(ringAddress)
-        smartRingIntent?.let {
-            bindService(it, this, BIND_AUTO_CREATE)
+        val intent = getSmartRingServiceIntent(ringAddress)
+        bindService(intent,this, BIND_AUTO_CREATE)
+    }
+
+    private fun getSmartRingServiceIntent(ringAddress: String) : Intent {
+        return smartRingIntent ?: run {
+            val intent = Intent(this, SmartRingService::class.java)
+            intent.putExtra(BLUETOOTH_DEVICE_ADDRESS, ringAddress)
+            smartRingIntent = intent
+            intent
         }
 
     }
 
-    private fun createSmartRingServiceIntent(ringAddress: String) {
-        val intent = Intent(this,SmartRingService::class.java)
-        intent.putExtra(BLUETOOTH_DEVICE_ADDRESS, ringAddress)
-        smartRingIntent = intent
-    }
-
-    private fun checkIfSmartRingServiceIsRunning() {
+    private fun rebindServiceIfNeeded() {
         val activityManager = getSystemService(ActivityManager::class.java) as ActivityManager
         val services = activityManager.getRunningServices(Integer.MAX_VALUE)
         for(service in services) {
-            println("service running: ${service.service.className}")
+            if(service.service.className == SMART_RING_SERVICE_CLASS_NAME) {
+                //rebind the service here
+                //TODO(this crashes my app because viewModel has not been initialized yet,
+                // so don't get the info from viewModel, get it from sharedPreferences or dataStore)
+                val intent = Intent(this, SmartRingService::class.java)
+                smartRingIntent = intent
+                bindService(intent, this, BIND_AUTO_CREATE)
+            }
         }
     }
 
