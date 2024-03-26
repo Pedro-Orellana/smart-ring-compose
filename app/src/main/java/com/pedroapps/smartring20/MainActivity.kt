@@ -46,9 +46,6 @@ class MainActivity : ComponentActivity(), ServiceConnection {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
-
         setContent {
             mainViewModel = viewModel()
 
@@ -107,7 +104,6 @@ class MainActivity : ComponentActivity(), ServiceConnection {
         println("SmartRingService is bound")
         binder?.let{
             val smartRingService = (it as SmartRingService.SmartRingBinder).getService()
-            smartRingService.getRingInformation()
             mainViewModel.updateSmartRingService(smartRingService)
             startForegroundService(smartRingIntent)
         }
@@ -179,6 +175,7 @@ fun ContainerContent(
 
     val navController = rememberNavController()
     val appState = viewModel.appState.collectAsState()
+    val ringState = appState.value.smartRingService?.ringState?.collectAsState()
 
     Scaffold(
         bottomBar = { AppBottomBar(navController = navController) },
@@ -208,7 +205,8 @@ fun ContainerContent(
                         },
                         registeredRing = appState.value.registeredRing,
                         deleteRing = viewModel::deleteRing,
-                        bindToSmartRingService = bindToSmartRingService
+                        bindToSmartRingService = bindToSmartRingService,
+                        isRingConnected = ringState?.value?.isConnected
                     )
                 }
                 composable(route = Destinations.NewDeviceScreen) {

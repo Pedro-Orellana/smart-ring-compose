@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pedroapps.smartring20.ble.SmartRingState
 import com.pedroapps.smartring20.components.NoRingCardLayout
 import com.pedroapps.smartring20.components.RingLayout
 import com.pedroapps.smartring20.components.SmartRingFoundDialog
@@ -38,7 +39,8 @@ fun HomeScreen(
     saveAndConnectRing: (BluetoothDevice) -> Unit,
     registeredRing: SmartRingUI,
     deleteRing: (SmartRingUI) -> Unit,
-    bindToSmartRingService: (String) -> Unit
+    bindToSmartRingService: (String) -> Unit,
+    isRingConnected: Boolean?
 ) {
 
     Box(
@@ -94,7 +96,8 @@ fun HomeScreen(
             RingLayout(
                 registeredRing = registeredRing,
                 deleteRing = deleteRing,
-                bindToSmartRingService = bindToSmartRingService
+                bindToSmartRingService = bindToSmartRingService,
+                isRingConnected = isRingConnected
             )
         }
 
@@ -130,6 +133,7 @@ fun HomeScreenPreview() {
         saveAndConnectRing = {},
         registeredRing = SmartRingUI.emptySmartRingUI(),
         deleteRing = {},
-        bindToSmartRingService = {}
+        bindToSmartRingService = {},
+        isRingConnected = false
     )
 }

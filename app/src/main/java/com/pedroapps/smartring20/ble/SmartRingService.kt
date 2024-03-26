@@ -17,6 +17,9 @@ import com.mbientlab.metawear.android.BtleService
 import com.pedroapps.smartring20.BLUETOOTH_DEVICE_ADDRESS
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_ID
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class SmartRingService : Service(), ServiceConnection {
 
@@ -26,6 +29,9 @@ class SmartRingService : Service(), ServiceConnection {
 
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var notificationManager: NotificationManager
+
+    private val _ringState = MutableStateFlow(SmartRingState())
+    val ringState = _ringState.asStateFlow()
 
 
     override fun onCreate() {
@@ -42,6 +48,7 @@ class SmartRingService : Service(), ServiceConnection {
         binder?.let {
             btleService = it as BtleService.LocalBinder
             smartRing = btleService?.getMetaWearBoard(bluetoothDevice)
+            connectToRing()
         }
     }
 
@@ -109,11 +116,28 @@ class SmartRingService : Service(), ServiceConnection {
 
     //METAWEAR BOARD METHODS
 
+    private fun connectToRing() {
+        smartRing?.connectAsync()
+            ?.continueWith { task ->
+              val isConnected = !task.isFaulted
+                updateRingConnectionState(isConnected = isConnected)
+            }
+    }
+
     fun getRingInformation() {
         smartRing?.let {
             println("board address: ${it.macAddress}")
             println("board connected: ${it.isConnected}")
-            //println("board model: ${it.model.name}")
+            println("board model: ${it.model.name}")
+        }
+    }
+
+
+    //RING STATE METHODS
+
+    private fun updateRingConnectionState(isConnected: Boolean) {
+        _ringState.update { currentState ->
+            currentState.copy(isConnected = isConnected)
         }
     }
 
