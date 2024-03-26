@@ -102,7 +102,8 @@ private fun ScanningLayout(
 fun RingLayout(
     registeredRing: SmartRingUI,
     deleteRing: (SmartRingUI) -> Unit,
-    bindToSmartRingService: (String) -> Unit
+    bindToSmartRingService: (String) -> Unit,
+    isRingConnected: Boolean?
 ) {
     val isRotated = remember {
         mutableStateOf(false)
@@ -142,7 +143,8 @@ fun RingLayout(
             } else {
                 RingCardFront(
                     isRotated = isRotated,
-                    registeredRing = registeredRing
+                    registeredRing = registeredRing,
+                    isRingConnected = isRingConnected
                 )
             }
         }
@@ -155,7 +157,8 @@ fun RingLayout(
 @Composable
 private fun RingCardFront(
     isRotated: MutableState<Boolean>,
-    registeredRing: SmartRingUI
+    registeredRing: SmartRingUI,
+    isRingConnected: Boolean?
 ) {
 
 
@@ -197,7 +200,7 @@ private fun RingCardFront(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = "Status: ")
-                Text(text = "Disconnected")
+                Text(text = if(isRingConnected == true) "Connected!" else "Disconnected")
             }
 
         }
@@ -394,7 +397,8 @@ fun RingCardPreview() {
     RingLayout(
         registeredRing = ring,
         deleteRing = {},
-        bindToSmartRingService = {}
+        bindToSmartRingService = {},
+        isRingConnected = false
     )
 }
 
