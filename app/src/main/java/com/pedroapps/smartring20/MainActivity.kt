@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     private lateinit var mainViewModel: MainViewModel
     private var smartRingIntent: Intent? = null
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +51,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
             mainViewModel = viewModel()
 
             LaunchedEffect(key1 = mainViewModel) {
-                if(this@MainActivity::mainViewModel.isInitialized) {
+                if (this@MainActivity::mainViewModel.isInitialized) {
                     rebindServiceIfNeeded()
                 }
             }
@@ -102,7 +103,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     override fun onServiceConnected(p0: ComponentName?, binder: IBinder?) {
         println("SmartRingService is bound")
-        binder?.let{
+        binder?.let {
             val smartRingService = (it as SmartRingService.SmartRingBinder).getService()
             mainViewModel.updateSmartRingService(smartRingService)
             startForegroundService(smartRingIntent)
@@ -116,10 +117,10 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     private fun bindToSmartRingService(ringAddress: String) {
         val intent = getSmartRingServiceIntent(ringAddress)
-        bindService(intent,this, BIND_AUTO_CREATE)
+        bindService(intent, this, BIND_AUTO_CREATE)
     }
 
-    private fun getSmartRingServiceIntent(ringAddress: String) : Intent {
+    private fun getSmartRingServiceIntent(ringAddress: String): Intent {
         return smartRingIntent ?: run {
             val intent = Intent(this, SmartRingService::class.java)
             intent.putExtra(BLUETOOTH_DEVICE_ADDRESS, ringAddress)
@@ -132,8 +133,8 @@ class MainActivity : ComponentActivity(), ServiceConnection {
     private fun rebindServiceIfNeeded() {
         val activityManager = getSystemService(ActivityManager::class.java) as ActivityManager
         val services = activityManager.getRunningServices(Integer.MAX_VALUE)
-        for(service in services) {
-            if(service.service.className == SMART_RING_SERVICE_CLASS_NAME) {
+        for (service in services) {
+            if (service.service.className == SMART_RING_SERVICE_CLASS_NAME) {
                 //rebind the service here
                 //TODO(this crashes my app because viewModel has not been initialized yet,
                 // so don't get the info from viewModel, get it from sharedPreferences or dataStore)
@@ -175,7 +176,8 @@ fun ContainerContent(
 
     val navController = rememberNavController()
     val appState = viewModel.appState.collectAsState()
-    val ringState = appState.value.smartRingService?.ringState?.collectAsState()
+    val ringService = appState.value.smartRingService
+    val ringState = ringService?.ringState?.collectAsState()
 
     Scaffold(
         bottomBar = { AppBottomBar(navController = navController) },
@@ -184,7 +186,13 @@ fun ContainerContent(
             NavHost(navController = navController, startDestination = Destinations.HomeScreen) {
 
                 composable(route = Destinations.DevicesScreen) {
-                    DevicesScreen(paddingValues = paddingValues)
+                    DevicesScreen(
+                        paddingValues = paddingValues,
+                        currentLedColor = ringState?.value?.currentLedColor,
+                        editLedPattern = { color -> ringService?.editLedPattern(color) },
+                        turnLedOff = { ringService?.turnLedOff() }
+
+                    )
                 }
 
                 composable(route = Destinations.GesturesScreen) {

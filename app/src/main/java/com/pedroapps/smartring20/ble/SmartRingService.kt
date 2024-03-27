@@ -14,12 +14,15 @@ import android.os.Binder
 import android.os.IBinder
 import com.mbientlab.metawear.MetaWearBoard
 import com.mbientlab.metawear.android.BtleService
+import com.mbientlab.metawear.module.Led
+import com.mbientlab.metawear.module.Led.Color
 import com.pedroapps.smartring20.BLUETOOTH_DEVICE_ADDRESS
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_ID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+
 
 class SmartRingService : Service(), ServiceConnection {
 
@@ -32,6 +35,9 @@ class SmartRingService : Service(), ServiceConnection {
 
     private val _ringState = MutableStateFlow(SmartRingState())
     val ringState = _ringState.asStateFlow()
+
+    //RING MODULES
+    private var ledModule: Led? = getLedModule()
 
 
     override fun onCreate() {
@@ -119,8 +125,9 @@ class SmartRingService : Service(), ServiceConnection {
     private fun connectToRing() {
         smartRing?.connectAsync()
             ?.continueWith { task ->
-              val isConnected = !task.isFaulted
+                val isConnected = !task.isFaulted
                 updateRingConnectionState(isConnected = isConnected)
+                initializeRingModules()
             }
     }
 
@@ -132,12 +139,48 @@ class SmartRingService : Service(), ServiceConnection {
         }
     }
 
+    private fun initializeRingModules() {
+        //TODO(add here all the necessary modules)
+        ledModule = getLedModule()
+    }
+
+    private fun getLedModule() : Led? {
+        return ledModule ?: smartRing?.getModule(Led::class.java)
+    }
+
+     fun editLedPattern(color : Color) {
+
+        ledModule?.let { led ->
+            led.stop(true)
+            led.editPattern(
+                color,
+                Led.PatternPreset.SOLID
+            ).commit()
+
+            led.play()
+
+            updateLedColorState(color)
+
+        }
+    }
+
+     fun turnLedOff() {
+         updateLedColorState(null)
+        ledModule?.stop(true)
+    }
+
 
     //RING STATE METHODS
 
     private fun updateRingConnectionState(isConnected: Boolean) {
         _ringState.update { currentState ->
             currentState.copy(isConnected = isConnected)
+        }
+    }
+
+    private fun updateLedColorState(color: Color?) {
+        _ringState.update { currentState ->
+            currentState.copy(currentLedColor = color)
         }
     }
 
