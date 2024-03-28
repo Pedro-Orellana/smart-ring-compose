@@ -35,6 +35,7 @@ import com.pedroapps.smartring20.screens.GesturesScreen
 import com.pedroapps.smartring20.screens.HomeScreen
 import com.pedroapps.smartring20.screens.NewDeviceScreen
 import com.pedroapps.smartring20.screens.SettingsScreen
+import com.pedroapps.smartring20.screens.TestingScreen
 import com.pedroapps.smartring20.ui.theme.SmartRing20Theme
 import com.pedroapps.smartring20.viewmodels.MainViewModel
 
@@ -183,22 +184,28 @@ fun ContainerContent(
         bottomBar = { AppBottomBar(navController = navController) },
         content = { paddingValues ->
 
-            NavHost(navController = navController, startDestination = Destinations.HomeScreen) {
+            NavHost(navController = navController, startDestination = Destinations.HOME_SCREEN) {
 
-                composable(route = Destinations.DevicesScreen) {
+
+                composable(route = Destinations.TESTING_SCREEN) {
+                    TestingScreen(
+                        paddingValues = paddingValues,
+                        currentLedColor = ringState?.value?.currentLedColor ,
+                        turnLedOff = { ringService?.turnLedOff() },
+                        editLedPattern = { color -> ringService?.editLedPattern(color) }
+                        )
+                }
+
+                composable(route = Destinations.DEVICES_SCREEN) {
                     DevicesScreen(
                         paddingValues = paddingValues,
-                        currentLedColor = ringState?.value?.currentLedColor,
-                        editLedPattern = { color -> ringService?.editLedPattern(color) },
-                        turnLedOff = { ringService?.turnLedOff() }
-
                     )
                 }
 
-                composable(route = Destinations.GesturesScreen) {
+                composable(route = Destinations.GESTURES_SCREEN) {
                     GesturesScreen(paddingValues = paddingValues)
                 }
-                composable(route = Destinations.HomeScreen) {
+                composable(route = Destinations.HOME_SCREEN) {
                     HomeScreen(
                         paddingValues = paddingValues,
                         isScanning = appState.value.isScanning,
@@ -217,10 +224,10 @@ fun ContainerContent(
                         isRingConnected = ringState?.value?.isConnected
                     )
                 }
-                composable(route = Destinations.NewDeviceScreen) {
+                composable(route = Destinations.NEW_DEVICE_SCREEN) {
                     NewDeviceScreen(paddingValues = paddingValues)
                 }
-                composable(route = Destinations.SettingsScreen) {
+                composable(route = Destinations.SETTINGS_SCREEN) {
                     SettingsScreen(paddingValues = paddingValues)
                 }
 

@@ -23,9 +23,6 @@ import com.mbientlab.metawear.module.Led
 @Composable
 fun DevicesScreen(
     paddingValues: PaddingValues,
-    currentLedColor: Led.Color?,
-    editLedPattern: (Led.Color) -> Unit,
-    turnLedOff: () -> Unit
 ) {
 
     Column(
@@ -41,51 +38,6 @@ fun DevicesScreen(
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
-
-        Text(
-            text = "This is a little test to make sure the service works correctly",
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth(0.75f)
-                .padding(top = 12.dp, bottom = 12.dp)
-            )
-
-        TextButton(onClick = {
-            if (currentLedColor == Led.Color.GREEN){
-                turnLedOff()
-            } else editLedPattern(Led.Color.GREEN)
-        }) {
-            Text(
-                text = if(currentLedColor == Led.Color.GREEN) "Green OFF" else "Green ON",
-                color = Color.Green,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp)
-        }
-
-        TextButton(onClick = {
-            if (currentLedColor == Led.Color.RED){
-                turnLedOff()
-            } else editLedPattern(Led.Color.RED)
-        }) {
-            Text(
-                text = if(currentLedColor == Led.Color.RED) "Red OFF" else "Red ON",
-                color = Color.Red,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp)
-        }
-
-        TextButton(onClick = {
-            if (currentLedColor == Led.Color.BLUE){
-                turnLedOff()
-            } else editLedPattern(Led.Color.BLUE)
-
-        }) {
-            Text(
-                text = if(currentLedColor == Led.Color.BLUE) "Blue OFF" else "Blue ON",
-                color = Color.Blue,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp)
-        }
     }
 }
 
@@ -94,8 +46,5 @@ fun DevicesScreen(
 fun DevicesScreenPreview() {
     DevicesScreen(
         paddingValues = PaddingValues(),
-        currentLedColor = null,
-        editLedPattern = {},
-        turnLedOff = {}
         )
 }
