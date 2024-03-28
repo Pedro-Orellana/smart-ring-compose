@@ -35,6 +35,7 @@ import com.pedroapps.smartring20.screens.GesturesScreen
 import com.pedroapps.smartring20.screens.HomeScreen
 import com.pedroapps.smartring20.screens.NewDeviceScreen
 import com.pedroapps.smartring20.screens.SettingsScreen
+import com.pedroapps.smartring20.screens.TestingScreen
 import com.pedroapps.smartring20.ui.theme.SmartRing20Theme
 import com.pedroapps.smartring20.viewmodels.MainViewModel
 
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     private lateinit var mainViewModel: MainViewModel
     private var smartRingIntent: Intent? = null
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +52,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
             mainViewModel = viewModel()
 
             LaunchedEffect(key1 = mainViewModel) {
-                if(this@MainActivity::mainViewModel.isInitialized) {
+                if (this@MainActivity::mainViewModel.isInitialized) {
                     rebindServiceIfNeeded()
                 }
             }
@@ -102,7 +104,7 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     override fun onServiceConnected(p0: ComponentName?, binder: IBinder?) {
         println("SmartRingService is bound")
-        binder?.let{
+        binder?.let {
             val smartRingService = (it as SmartRingService.SmartRingBinder).getService()
             mainViewModel.updateSmartRingService(smartRingService)
             startForegroundService(smartRingIntent)
@@ -116,10 +118,10 @@ class MainActivity : ComponentActivity(), ServiceConnection {
 
     private fun bindToSmartRingService(ringAddress: String) {
         val intent = getSmartRingServiceIntent(ringAddress)
-        bindService(intent,this, BIND_AUTO_CREATE)
+        bindService(intent, this, BIND_AUTO_CREATE)
     }
 
-    private fun getSmartRingServiceIntent(ringAddress: String) : Intent {
+    private fun getSmartRingServiceIntent(ringAddress: String): Intent {
         return smartRingIntent ?: run {
             val intent = Intent(this, SmartRingService::class.java)
             intent.putExtra(BLUETOOTH_DEVICE_ADDRESS, ringAddress)
@@ -132,8 +134,8 @@ class MainActivity : ComponentActivity(), ServiceConnection {
     private fun rebindServiceIfNeeded() {
         val activityManager = getSystemService(ActivityManager::class.java) as ActivityManager
         val services = activityManager.getRunningServices(Integer.MAX_VALUE)
-        for(service in services) {
-            if(service.service.className == SMART_RING_SERVICE_CLASS_NAME) {
+        for (service in services) {
+            if (service.service.className == SMART_RING_SERVICE_CLASS_NAME) {
                 //rebind the service here
                 //TODO(this crashes my app because viewModel has not been initialized yet,
                 // so don't get the info from viewModel, get it from sharedPreferences or dataStore)
@@ -175,22 +177,35 @@ fun ContainerContent(
 
     val navController = rememberNavController()
     val appState = viewModel.appState.collectAsState()
-    val ringState = appState.value.smartRingService?.ringState?.collectAsState()
+    val ringService = appState.value.smartRingService
+    val ringState = ringService?.ringState?.collectAsState()
 
     Scaffold(
         bottomBar = { AppBottomBar(navController = navController) },
         content = { paddingValues ->
 
-            NavHost(navController = navController, startDestination = Destinations.HomeScreen) {
+            NavHost(navController = navController, startDestination = Destinations.HOME_SCREEN) {
 
-                composable(route = Destinations.DevicesScreen) {
-                    DevicesScreen(paddingValues = paddingValues)
+
+                composable(route = Destinations.TESTING_SCREEN) {
+                    TestingScreen(
+                        paddingValues = paddingValues,
+                        currentLedColor = ringState?.value?.currentLedColor ,
+                        turnLedOff = { ringService?.turnLedOff() },
+                        editLedPattern = { color -> ringService?.editLedPattern(color) }
+                        )
                 }
 
-                composable(route = Destinations.GesturesScreen) {
+                composable(route = Destinations.DEVICES_SCREEN) {
+                    DevicesScreen(
+                        paddingValues = paddingValues,
+                    )
+                }
+
+                composable(route = Destinations.GESTURES_SCREEN) {
                     GesturesScreen(paddingValues = paddingValues)
                 }
-                composable(route = Destinations.HomeScreen) {
+                composable(route = Destinations.HOME_SCREEN) {
                     HomeScreen(
                         paddingValues = paddingValues,
                         isScanning = appState.value.isScanning,
@@ -209,10 +224,10 @@ fun ContainerContent(
                         isRingConnected = ringState?.value?.isConnected
                     )
                 }
-                composable(route = Destinations.NewDeviceScreen) {
+                composable(route = Destinations.NEW_DEVICE_SCREEN) {
                     NewDeviceScreen(paddingValues = paddingValues)
                 }
-                composable(route = Destinations.SettingsScreen) {
+                composable(route = Destinations.SETTINGS_SCREEN) {
                     SettingsScreen(paddingValues = paddingValues)
                 }
 

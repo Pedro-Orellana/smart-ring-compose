@@ -3,6 +3,7 @@ package com.pedroapps.smartring20.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.ThumbUp
@@ -20,25 +21,29 @@ fun AppBottomBar(
 ) {
     BottomAppBar(
         actions = {
-            IconButton(onClick = { navController.navigate(Destinations.HomeScreen) }) {
+            IconButton(onClick = { navController.navigate(Destinations.HOME_SCREEN) }) {
                 Icon(imageVector = Icons.Outlined.Home, contentDescription = "Home Screen")
             }
 
-            IconButton(onClick = { navController.navigate(Destinations.DevicesScreen) }) {
+            IconButton(onClick = { navController.navigate(Destinations.DEVICES_SCREEN) }) {
                 Icon(imageVector = Icons.Outlined.Create, contentDescription = "Devices Screen")
             }
 
-            IconButton(onClick = { navController.navigate(Destinations.GesturesScreen) }) {
+            IconButton(onClick = { navController.navigate(Destinations.GESTURES_SCREEN) }) {
                 Icon(imageVector = Icons.Outlined.ThumbUp, contentDescription = "Gestures Screen")
             }
 
-            IconButton(onClick = { navController.navigate(Destinations.SettingsScreen) }) {
+            IconButton(onClick = { navController.navigate(Destinations.SETTINGS_SCREEN) }) {
                 Icon(imageVector = Icons.Outlined.Build, contentDescription = "Settings Screen")
+            }
+
+            IconButton(onClick = { navController.navigate(Destinations.TESTING_SCREEN) }) {
+                Icon(imageVector = Icons.Outlined.CheckCircle, contentDescription = "Testing Screen")
             }
         },
 
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate(Destinations.NewDeviceScreen) }) {
+            FloatingActionButton(onClick = { navController.navigate(Destinations.NEW_DEVICE_SCREEN) }) {
                 Icon(imageVector = Icons.Outlined.Add, contentDescription = "Add new device")
             }
         }
