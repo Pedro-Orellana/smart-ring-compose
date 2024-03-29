@@ -27,7 +27,10 @@ fun TestingScreen(
     paddingValues: PaddingValues,
     currentLedColor: Led.Color?,
     turnLedOff: () -> Unit,
-    editLedPattern: (Led.Color) -> Unit
+    editLedPattern: (Led.Color) -> Unit,
+    startTapTesting: () -> Unit,
+    stopTapTesting: () -> Unit,
+    currentTapCount: Int
 ) {
     Box(
         modifier = Modifier
@@ -64,7 +67,11 @@ fun TestingScreen(
                 turnLedOff = turnLedOff,
                 editLedPattern = editLedPattern
             )
-            1 -> TapTestingTab()
+            1 -> TapTestingTab(
+                startTapTesting = startTapTesting,
+                stopTapTesting = stopTapTesting,
+                currentTapCount = currentTapCount
+            )
             2 -> GestureTestingTab()
         }
 
@@ -80,6 +87,9 @@ fun TestingScreenPreview() {
         paddingValues = PaddingValues(),
         currentLedColor = null,
         turnLedOff = { },
-        editLedPattern = { }
+        editLedPattern = { },
+        startTapTesting = {},
+        stopTapTesting = {},
+        currentTapCount = 0
     )
 }

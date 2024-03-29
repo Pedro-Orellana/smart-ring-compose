@@ -9,12 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mbientlab.metawear.module.Led
@@ -29,7 +32,7 @@ fun LedTestingTab(
 
     DisposableEffect(key1 = true) {
         println("Led entering composition")
-       onDispose(turnLedOff)
+        onDispose(turnLedOff)
     }
 
     Column(
@@ -93,10 +96,18 @@ fun LedTestingTab(
 }
 
 @Composable
-fun TapTestingTab() {
+fun TapTestingTab(
+    startTapTesting: () -> Unit,
+    stopTapTesting: () -> Unit,
+    currentTapCount: Int
+) {
 
     DisposableEffect(key1 = true) {
-        onDispose {  }
+        startTapTesting()
+        onDispose {
+            println("stopping tap testing")
+            stopTapTesting()
+        }
     }
 
     Column(
@@ -105,14 +116,26 @@ fun TapTestingTab() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Text(text = "Tap Testing tab")
+        Text(
+            text = "Count of double taps:",
+            textAlign = TextAlign.Center,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .padding(bottom = 20.dp)
+        )
+        Text(
+            text = currentTapCount.toString(),
+            fontSize = 18.sp,
+            fontStyle = FontStyle.Italic
+        )
     }
 }
 
 @Composable
 fun GestureTestingTab() {
     DisposableEffect(key1 = true) {
-        onDispose {  }
+        onDispose { }
     }
 
     Column(
@@ -124,4 +147,21 @@ fun GestureTestingTab() {
         Text(text = "Gesture Testing tab")
     }
 
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun TapTestingTabPreview() {
+    TapTestingTab(
+        startTapTesting = {},
+        stopTapTesting = {},
+        currentTapCount = 0
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GestureTestingTabPreview() {
+    GestureTestingTab()
 }
