@@ -192,7 +192,10 @@ fun ContainerContent(
                         paddingValues = paddingValues,
                         currentLedColor = ringState?.value?.currentLedColor ,
                         turnLedOff = { ringService?.turnLedOff() },
-                        editLedPattern = { color -> ringService?.editLedPattern(color) }
+                        editLedPattern = { color -> ringService?.editLedPattern(color) },
+                        startTapTesting = { ringService?.startDoubleTapDetection() },
+                        stopTapTesting = { ringService?.stopDoubleTapDetection() },
+                        currentTapCount = ringState?.value?.doubleTapCount ?: 0
                         )
                 }
 

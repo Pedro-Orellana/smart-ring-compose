@@ -14,14 +14,21 @@ import android.os.Binder
 import android.os.IBinder
 import com.mbientlab.metawear.MetaWearBoard
 import com.mbientlab.metawear.android.BtleService
+import com.mbientlab.metawear.data.TapType
+import com.mbientlab.metawear.module.AccelerometerBosch
+import com.mbientlab.metawear.module.AccelerometerBosch.Tap
 import com.mbientlab.metawear.module.Led
 import com.mbientlab.metawear.module.Led.Color
 import com.pedroapps.smartring20.BLUETOOTH_DEVICE_ADDRESS
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_ID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 
 class SmartRingService : Service(), ServiceConnection {
@@ -38,7 +45,10 @@ class SmartRingService : Service(), ServiceConnection {
 
     //RING MODULES
     private var ledModule: Led? = getLedModule()
+    private var accBosch: AccelerometerBosch? = getAccBoschModule()
 
+    private val job = SupervisorJob()
+    private val mainScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreate() {
         super.onCreate()
@@ -128,6 +138,7 @@ class SmartRingService : Service(), ServiceConnection {
                 val isConnected = !task.isFaulted
                 updateRingConnectionState(isConnected = isConnected)
                 initializeRingModules()
+                configureDoubleTapDetection()
             }
     }
 
@@ -142,11 +153,17 @@ class SmartRingService : Service(), ServiceConnection {
     private fun initializeRingModules() {
         //TODO(add here all the necessary modules)
         ledModule = getLedModule()
+        accBosch = getAccBoschModule()
     }
 
     private fun getLedModule() : Led? {
         return ledModule ?: smartRing?.getModule(Led::class.java)
     }
+
+    private fun getAccBoschModule(): AccelerometerBosch? {
+        return accBosch ?: smartRing?.getModule(AccelerometerBosch::class.java)
+    }
+
 
      fun editLedPattern(color : Color) {
 
@@ -161,6 +178,46 @@ class SmartRingService : Service(), ServiceConnection {
 
             updateLedColorState(color)
 
+        }
+
+    }
+
+   private fun configureDoubleTapDetection() {
+        //TODO(separate the start and the configure into 2 methods)
+        accBosch?.let { acc ->
+            acc.tap().configure()
+                .enableDoubleTap()
+                .threshold(2f)
+                .shockTime(AccelerometerBosch.TapShockTime.TST_75_MS)
+
+                .commit()
+
+            acc.tap().addRouteAsync { source ->
+                source.stream { data, _ ->
+                    val tapData = data.value(Tap::class.java)
+                    if (tapData.type == TapType.DOUBLE) {
+                        mainScope.launch(Dispatchers.Main) {
+                            println("Double tap!")
+                            addToDoubleTapCount()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun startDoubleTapDetection() {
+        accBosch?.let { acc ->
+            acc.tap().start()
+            acc.start()
+        }
+    }
+
+    fun stopDoubleTapDetection() {
+        accBosch?.let { acc ->
+            acc.tap().stop()
+            acc.stop()
+            resetDoubleTapCount()
         }
     }
 
@@ -181,6 +238,20 @@ class SmartRingService : Service(), ServiceConnection {
     private fun updateLedColorState(color: Color?) {
         _ringState.update { currentState ->
             currentState.copy(currentLedColor = color)
+        }
+    }
+
+    private fun addToDoubleTapCount() {
+        _ringState.update { currentState ->
+            val newTapCount = currentState.doubleTapCount + 1
+            println("new count: $newTapCount")
+            currentState.copy(doubleTapCount = newTapCount)
+        }
+    }
+
+    private fun resetDoubleTapCount() {
+        _ringState.update { currentState ->
+            currentState.copy(doubleTapCount = 0)
         }
     }
 
