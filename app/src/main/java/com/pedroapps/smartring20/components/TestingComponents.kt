@@ -2,6 +2,7 @@ package com.pedroapps.smartring20.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mbientlab.metawear.data.EulerAngles
 import com.mbientlab.metawear.module.Led
 
 
@@ -133,9 +135,17 @@ fun TapTestingTab(
 }
 
 @Composable
-fun GestureTestingTab() {
+fun GestureTestingTab(
+    startGestureTesting: () -> Unit,
+    stopGestureTesting: () -> Unit,
+    rawAngleData: EulerAngles?
+) {
+
     DisposableEffect(key1 = true) {
-        onDispose { }
+        startGestureTesting()
+        onDispose {
+            stopGestureTesting()
+        }
     }
 
     Column(
@@ -144,7 +154,49 @@ fun GestureTestingTab() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Text(text = "Gesture Testing tab")
+        Text(
+            text = "Gesture Testing",
+            textAlign = TextAlign.Center,
+            fontSize = 24.sp
+            )
+
+        Text(
+            text = "Current angle measurements:",
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(8.dp)
+        )
+        Row(
+            modifier = Modifier
+                .padding(4.dp)
+        ) {
+            Text(text = "Roll: ")
+            Text(text = rawAngleData?.roll().toString())
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(4.dp)
+        ) {
+            Text(text = "Yaw: ")
+            Text(text = rawAngleData?.yaw().toString())
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(4.dp)
+        ) {
+            Text(text = "Pitch: ")
+            Text(text = rawAngleData?.pitch().toString())
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(4.dp)
+        ) {
+            Text(text = "Heading: ")
+            Text(text = rawAngleData?.heading().toString())
+        }
     }
 
 }
@@ -163,5 +215,9 @@ fun TapTestingTabPreview() {
 @Preview(showBackground = true)
 @Composable
 fun GestureTestingTabPreview() {
-    GestureTestingTab()
+    GestureTestingTab(
+        startGestureTesting = {},
+        stopGestureTesting = {},
+        rawAngleData = null
+    )
 }

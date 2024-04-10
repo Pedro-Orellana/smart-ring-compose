@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mbientlab.metawear.data.EulerAngles
 import com.mbientlab.metawear.module.Led
 import com.pedroapps.smartring20.components.GestureTestingTab
 import com.pedroapps.smartring20.components.LedTestingTab
@@ -30,7 +31,10 @@ fun TestingScreen(
     editLedPattern: (Led.Color) -> Unit,
     startTapTesting: () -> Unit,
     stopTapTesting: () -> Unit,
-    currentTapCount: Int
+    currentTapCount: Int,
+    startGestureTesting: () -> Unit,
+    stopGestureTesting: () -> Unit,
+    rawAngleData: EulerAngles?
 ) {
     Box(
         modifier = Modifier
@@ -72,7 +76,11 @@ fun TestingScreen(
                 stopTapTesting = stopTapTesting,
                 currentTapCount = currentTapCount
             )
-            2 -> GestureTestingTab()
+            2 -> GestureTestingTab(
+                startGestureTesting = startGestureTesting,
+                stopGestureTesting = stopGestureTesting,
+                rawAngleData = rawAngleData
+            )
         }
 
 
@@ -90,6 +98,9 @@ fun TestingScreenPreview() {
         editLedPattern = { },
         startTapTesting = {},
         stopTapTesting = {},
-        currentTapCount = 0
+        currentTapCount = 0,
+        startGestureTesting = {},
+        stopGestureTesting = {},
+        rawAngleData = null
     )
 }
