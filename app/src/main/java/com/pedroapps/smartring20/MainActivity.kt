@@ -190,13 +190,16 @@ fun ContainerContent(
                 composable(route = Destinations.TESTING_SCREEN) {
                     TestingScreen(
                         paddingValues = paddingValues,
-                        currentLedColor = ringState?.value?.currentLedColor ,
+                        currentLedColor = ringState?.value?.currentLedColor,
                         turnLedOff = { ringService?.turnLedOff() },
                         editLedPattern = { color -> ringService?.editLedPattern(color) },
                         startTapTesting = { ringService?.startDoubleTapDetection() },
                         stopTapTesting = { ringService?.stopDoubleTapDetection() },
-                        currentTapCount = ringState?.value?.doubleTapCount ?: 0
-                        )
+                        currentTapCount = ringState?.value?.doubleTapCount ?: 0,
+                        startGestureTesting = { ringService?.startMotionDetectionTest() },
+                        stopGestureTesting = { ringService?.stopMotionDetectionTest() },
+                        rawAngleData = ringState?.value?.rawAngleData
+                    )
                 }
 
                 composable(route = Destinations.DEVICES_SCREEN) {

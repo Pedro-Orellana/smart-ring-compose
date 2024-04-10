@@ -14,11 +14,13 @@ import android.os.Binder
 import android.os.IBinder
 import com.mbientlab.metawear.MetaWearBoard
 import com.mbientlab.metawear.android.BtleService
+import com.mbientlab.metawear.data.EulerAngles
 import com.mbientlab.metawear.data.TapType
 import com.mbientlab.metawear.module.AccelerometerBosch
 import com.mbientlab.metawear.module.AccelerometerBosch.Tap
 import com.mbientlab.metawear.module.Led
 import com.mbientlab.metawear.module.Led.Color
+import com.mbientlab.metawear.module.SensorFusionBosch
 import com.pedroapps.smartring20.BLUETOOTH_DEVICE_ADDRESS
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_CHANNEL_ID
 import com.pedroapps.smartring20.FOREGROUND_SERVICE_NOTIFICATION_ID
@@ -46,6 +48,7 @@ class SmartRingService : Service(), ServiceConnection {
     //RING MODULES
     private var ledModule: Led? = getLedModule()
     private var accBosch: AccelerometerBosch? = getAccBoschModule()
+    private var sensorFusion: SensorFusionBosch? = getSensorFusionBosch()
 
     private val job = SupervisorJob()
     private val mainScope = CoroutineScope(Dispatchers.Main + job)
@@ -138,6 +141,7 @@ class SmartRingService : Service(), ServiceConnection {
                 val isConnected = !task.isFaulted
                 updateRingConnectionState(isConnected = isConnected)
                 initializeRingModules()
+                configureSensorFusion()
                 configureDoubleTapDetection()
             }
     }
@@ -154,6 +158,7 @@ class SmartRingService : Service(), ServiceConnection {
         //TODO(add here all the necessary modules)
         ledModule = getLedModule()
         accBosch = getAccBoschModule()
+        sensorFusion = getSensorFusionBosch()
     }
 
     private fun getLedModule() : Led? {
@@ -162,6 +167,10 @@ class SmartRingService : Service(), ServiceConnection {
 
     private fun getAccBoschModule(): AccelerometerBosch? {
         return accBosch ?: smartRing?.getModule(AccelerometerBosch::class.java)
+    }
+
+    private fun getSensorFusionBosch(): SensorFusionBosch? {
+        return sensorFusion ?: smartRing?.getModule(SensorFusionBosch::class.java)
     }
 
 
@@ -183,27 +192,53 @@ class SmartRingService : Service(), ServiceConnection {
     }
 
    private fun configureDoubleTapDetection() {
-        //TODO(separate the start and the configure into 2 methods)
         accBosch?.let { acc ->
             acc.tap().configure()
                 .enableDoubleTap()
                 .threshold(2f)
-                .shockTime(AccelerometerBosch.TapShockTime.TST_75_MS)
+                .shockTime(AccelerometerBosch.TapShockTime.TST_50_MS)
 
                 .commit()
 
             acc.tap().addRouteAsync { source ->
                 source.stream { data, _ ->
                     val tapData = data.value(Tap::class.java)
-                    if (tapData.type == TapType.DOUBLE) {
-                        mainScope.launch(Dispatchers.Main) {
-                            println("Double tap!")
+                    mainScope.launch(Dispatchers.Main) {
+
+                        if (tapData.type == TapType.DOUBLE) {
+                            println("double tap")
                             addToDoubleTapCount()
+                        } else if (tapData.type == TapType.SINGLE) {
+                            println("single tap")
                         }
+
                     }
+
                 }
             }
         }
+    }
+
+    private fun configureSensorFusion() {
+        sensorFusion?.let { fusion ->
+            fusion.configure()
+                .mode(SensorFusionBosch.Mode.NDOF)
+                .accRange(SensorFusionBosch.AccRange.AR_16G)
+                .gyroRange(SensorFusionBosch.GyroRange.GR_2000DPS)
+                .commit()
+
+            fusion.eulerAngles().addRouteAsync { source ->
+                source.stream { data, _ ->
+                    val rawAngleData = data.value(EulerAngles::class.java)
+                    updateRawAngleData(rawAngleData)
+                }
+            }
+        }
+    }
+
+    fun turnLedOff() {
+        updateLedColorState(null)
+        ledModule?.stop(true)
     }
 
     fun startDoubleTapDetection() {
@@ -221,10 +256,21 @@ class SmartRingService : Service(), ServiceConnection {
         }
     }
 
-     fun turnLedOff() {
-         updateLedColorState(null)
-        ledModule?.stop(true)
+    fun startMotionDetectionTest() {
+        sensorFusion?.let { fusion ->
+            fusion.eulerAngles().start()
+            fusion.start()
+        }
     }
+
+    fun stopMotionDetectionTest() {
+        sensorFusion?.let { fusion ->
+            fusion.eulerAngles().stop()
+            fusion.stop()
+        }
+    }
+
+
 
 
     //RING STATE METHODS
@@ -252,6 +298,13 @@ class SmartRingService : Service(), ServiceConnection {
     private fun resetDoubleTapCount() {
         _ringState.update { currentState ->
             currentState.copy(doubleTapCount = 0)
+        }
+    }
+
+
+    private fun updateRawAngleData(angleData: EulerAngles?) {
+        _ringState.update { currentState ->
+            currentState.copy(rawAngleData = angleData)
         }
     }
 
